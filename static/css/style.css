@@ -6,6 +6,7 @@ body {
     height: 100vh;
 }
 
+/* Center container */
 .container {
     display: flex;
     justify-content: center;
@@ -13,26 +14,31 @@ body {
     height: 100%;
 }
 
+/* Card UI */
 .card {
     background: white;
     padding: 30px;
     border-radius: 12px;
-    width: 300px;
+    width: 350px;
     text-align: center;
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    animation: fadeIn 1s ease;
+    animation: fadeIn 0.8s ease;
 }
 
+/* Logo emoji */
 .logo {
     font-size: 40px;
     margin-bottom: 10px;
 }
 
+/* Headings */
 h2 {
     margin-bottom: 20px;
 }
 
-input {
+/* Inputs */
+input[type="text"],
+input[type="password"] {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
@@ -40,6 +46,7 @@ input {
     border-radius: 8px;
 }
 
+/* Button */
 button {
     width: 100%;
     padding: 10px;
@@ -55,15 +62,77 @@ button:hover {
     background: #5a67d8;
 }
 
+/* Links */
 a {
     color: #667eea;
     text-decoration: none;
 }
 
+/* Quiz Styling */
+.question-box {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.question {
+    margin-bottom: 10px;
+}
+
+/* Option styling */
+.option {
+    display: flex;
+    align-items: center;
+    background: #f9f9f9;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.option input {
+    margin-right: 10px;
+    transform: scale(1.2);
+}
+
+/* Hover effect */
+.option:hover {
+    background: #e6ecff;
+}
+
+/* Selected option highlight */
+.option input:checked {
+    accent-color: #667eea;
+}
+
+.option:has(input:checked) {
+    background: #667eea;
+    color: white;
+}
+
+/* Navigation buttons */
+.nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.nav-buttons button {
+    width: 48%;
+}
+
+/* Timer */
+#timer {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: red;
+}
+
+/* Animation */
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(15px);
     }
     to {
         opacity: 1;

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>Quiz Time 🧠</h2>
+
+        <!-- TIMER -->
+        <p id="timer">Time Left: 60s</p>
+
+        <form method="POST" action="/result" id="quizForm">
+
+            {% for q in questions %}
+            <div class="question-box" style="{% if loop.index != 1 %}display:none{% endif %}">
+                
+                <p class="question"><b>{{ loop.index }}. {{ q[1] }}</b></p>
+
+                <label class="option">
+                    <input type="radio" name="q{{ q[0] }}" value="{{ q[2] }}">
+                    <span>{{ q[2] }}</span>
+                </label>
+
+                <label class="option">
+                    <input type="radio" name="q{{ q[0] }}" value="{{ q[3] }}">
+                    <span>{{ q[3] }}</span>
+                </label>
+
+                <label class="option">
+                    <input type="radio" name="q{{ q[0] }}" value="{{ q[4] }}">
+                    <span>{{ q[4] }}</span>
+                </label>
+
+                <label class="option">
+                    <input type="radio" name="q{{ q[0] }}" value="{{ q[5] }}">
+                    <span>{{ q[5] }}</span>
+                </label>
+
+            </div>
+            {% endfor %}
+
+            <!-- NAV BUTTONS -->
+            <div class="nav-buttons">
+                <button type="button" onclick="prevQuestion()">Previous</button>
+                <button type="button" onclick="nextQuestion()">Next</button>
+            </div>
+
+            <br>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</div>
+
+<script>
+let current = 0;
+let questions = document.querySelectorAll(".question-box");
+
+function showQuestion(index) {
+    questions.forEach((q, i) => {
+        q.style.display = i === index ? "block" : "none";
+    });
+}
+
+function nextQuestion() {
+    if (current < questions.length - 1) {
+        current++;
+        showQuestion(current);
+    }
+}
+
+function prevQuestion() {
+    if (current > 0) {
+        current--;
+        showQuestion(current);
+    }
+}
+
+showQuestion(current);
+
+
+// TIMER
+let time = 60;
+let timer = document.getElementById("timer");
+
+let countdown = setInterval(() => {
+    time--;
+    timer.innerText = "Time Left: " + time + "s";
+
+    if (time <= 0) {
+        clearInterval(countdown);
+        document.getElementById("quizForm").submit();
+    }
+}, 1000);
+</script>
+
+</body>
+</html>
