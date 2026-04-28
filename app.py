@@ -138,9 +138,12 @@ def result():
         if user_ans == q[6]:
             score += 1
 
+    total = len(questions)
+    percentage = round((score / total) * 100) if total > 0 else 0
+
     conn.close()
 
-    return render_template('result.html', score=score, total=len(questions))
+    return render_template('result.html', score=score, total=total, percentage=percentage)
 
 
 if __name__ == '__main__':
