@@ -173,6 +173,11 @@ def result():
 # LEADERBOARD
 @app.route('/leaderboard')
 def leaderboard():
+    if 'user' not in session:
+        return redirect('/')
+
+    current_user = session['user']
+
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
 
@@ -186,7 +191,6 @@ def leaderboard():
     rows = c.fetchall()
     conn.close()
 
-    # 🔥 ADD RANK LOGIC
     data = []
     rank = 0
     prev_score = None
@@ -199,7 +203,8 @@ def leaderboard():
         if score != prev_score:
             rank = count
 
-        data.append((rank, row[0], row[1], row[2]))
+        # add current user info
+        data.append((rank, row[0], row[1], row[2], row[0] == current_user))
         prev_score = score
 
     return render_template('leaderboard.html', data=data)
@@ -209,6 +214,24 @@ def leaderboard():
 def logout():
     session.pop('user', None)
     return redirect('/')
+# DELETE SCORE
+@app.route('/delete_score', methods=['POST'])
+def delete_score():
+    if 'user' not in session:
+        return redirect('/')
+
+    username = session['user']
+
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    # delete ONLY this user's scores
+    c.execute("DELETE FROM scores WHERE username=?", (username,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect('/leaderboard')
 
 
 # RUN

@@ -15,6 +15,7 @@
                 <th>Rank</th>
                 <th>User</th>
                 <th>Score</th>
+                <th>Action</th>
             </tr>
 
             {% for row in data %}
@@ -29,6 +30,16 @@
 
                 <td>{{ row[1] }}</td>
                 <td>{{ row[2] }} / {{ row[3] }}</td>
+
+                <td>
+                    {% if row[4] %}
+                    <form method="POST" action="/delete_score">
+                        <button style="background:red;">Delete</button>
+                    </form>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </table>
