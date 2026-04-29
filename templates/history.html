@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>{{ user }}'s Quiz History 📜</h2>
+
+        <table>
+            <tr>
+                <th>Attempt</th>
+                <th>Score</th>
+            </tr>
+
+            {% for row in data %}
+            <tr>
+                <td>#{{ loop.index }}</td>
+                <td>{{ row[0] }} / {{ row[1] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <br>
+
+        <a href="/dashboard">
+            <button>Back</button>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

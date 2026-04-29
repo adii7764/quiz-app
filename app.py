@@ -232,6 +232,29 @@ def delete_score():
     conn.close()
 
     return redirect('/leaderboard')
+# HISTORY
+@app.route('/history')
+def history():
+    if 'user' not in session:
+        return redirect('/')
+
+    username = session['user']
+
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT score, total 
+        FROM scores 
+        WHERE username=? 
+        ORDER BY id DESC
+    """, (username,))
+
+    data = c.fetchall()
+
+    conn.close()
+
+    return render_template('history.html', data=data, user=username)
 
 
 # RUN
