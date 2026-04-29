@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial;
+    font-family: 'Poppins', sans-serif;
     background: linear-gradient(135deg, #667eea, #764ba2);
     height: 100vh;
 }
@@ -14,61 +16,62 @@ body {
     height: 100%;
 }
 
-/* Card UI */
+/* Modern Glass Card */
 .card {
-    background: white;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
     padding: 30px;
-    border-radius: 12px;
-    width: 350px;
+    border-radius: 15px;
+    width: 380px;
     text-align: center;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     animation: fadeIn 0.8s ease;
+    color: white;
 }
 
-/* Logo emoji */
-.logo {
-    font-size: 40px;
-    margin-bottom: 10px;
-}
-
-/* Headings */
+/* Heading */
 h2 {
     margin-bottom: 20px;
+    font-weight: 600;
 }
 
 /* Inputs */
 input[type="text"],
 input[type="password"] {
     width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
+    padding: 12px;
+    margin: 12px 0;
+    border: none;
     border-radius: 8px;
+    outline: none;
 }
 
-/* Button */
+/* Buttons */
 button {
     width: 100%;
-    padding: 10px;
-    background: #667eea;
+    padding: 12px;
+    margin-top: 10px;
+    background: linear-gradient(135deg, #ff7eb3, #ff758c);
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     transition: 0.3s;
+    font-weight: 600;
 }
 
 button:hover {
-    background: #5a67d8;
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 /* Links */
 a {
-    color: #667eea;
+    color: #ffd6e0;
     text-decoration: none;
 }
 
-/* Quiz Styling */
+/* Quiz Question */
 .question-box {
     text-align: left;
     margin-bottom: 20px;
@@ -78,43 +81,41 @@ a {
     margin-bottom: 10px;
 }
 
-/* Option styling */
+/* Options */
 .option {
     display: flex;
     align-items: center;
-    background: #f9f9f9;
-    padding: 10px;
+    background: rgba(255,255,255,0.2);
+    padding: 12px;
     margin: 8px 0;
     border-radius: 8px;
     cursor: pointer;
     transition: 0.3s;
 }
 
+.option:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Radio */
 .option input {
     margin-right: 10px;
     transform: scale(1.2);
 }
 
-/* Hover effect */
-.option:hover {
-    background: #e6ecff;
-}
-
-/* Selected option highlight */
+/* Selected */
 .option input:checked {
-    accent-color: #667eea;
+    accent-color: #ff758c;
 }
 
 .option:has(input:checked) {
-    background: #667eea;
-    color: white;
+    background: #ff758c;
 }
 
 /* Navigation buttons */
 .nav-buttons {
     display: flex;
     justify-content: space-between;
-    margin-top: 15px;
 }
 
 .nav-buttons button {
@@ -125,7 +126,22 @@ a {
 #timer {
     font-weight: bold;
     margin-bottom: 10px;
-    color: red;
+    color: #ffd6e0;
+}
+
+/* Table (Leaderboard) */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 10px;
+}
+
+tr:nth-child(even) {
+    background: rgba(255,255,255,0.1);
 }
 
 /* Animation */
@@ -138,4 +154,63 @@ a {
         opacity: 1;
         transform: translateY(0);
     }
+}
+.percentage-box {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 15px 0;
+    padding: 15px;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #333;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+.circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 20px auto;
+    background: conic-gradient(#ff758c 0deg, #eee 0deg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.3s;
+}
+
+.inner-circle {
+    width: 90px;
+    height: 90px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 20px;
+    color: #333;
+}
+#feedback {
+    font-size: 18px;
+    margin-top: 10px;
+    font-weight: bold;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th {
+    text-align: left;
+    padding: 10px;
+    font-weight: bold;
+}
+
+td {
+    padding: 10px;
+}
+
+tr:hover {
+    background: rgba(255,255,255,0.2);
 }

@@ -10,19 +10,65 @@
     <div class="card">
         <h2>Your Score 🎯</h2>
 
-        <p style="font-size: 20px;"><b>{{ score }} / {{ total }}</b></p>
+        <p><b>{{ score }} / {{ total }}</b></p>
 
-        <p style="font-size: 18px; color: #667eea;">
-            Percentage: {{ percentage }}%
-        </p>
+        <!-- 🔥 CIRCLE -->
+        <div class="circle">
+            <div class="inner-circle">
+                <span id="percentText">0%</span>
+            </div>
+        </div>
+
+        <!-- 🔥 FEEDBACK MESSAGE -->
+        <p id="feedback"></p>
 
         <br>
+
+        <a href="/leaderboard">
+            <button>View Leaderboard 🏆</button>
+        </a>
+
+        <br><br>
 
         <a href="/dashboard">
             <button>Back to Dashboard</button>
         </a>
     </div>
 </div>
+
+<script>
+let percent = {{ percentage }};
+let count = 0;
+
+let text = document.getElementById("percentText");
+let feedback = document.getElementById("feedback");
+
+let interval = setInterval(() => {
+    if (count >= percent) {
+        clearInterval(interval);
+
+        // 🎯 FEEDBACK LOGIC
+        if (percent >= 80) {
+            feedback.innerText = "🔥 Excellent!";
+            feedback.style.color = "lime";
+        } 
+        else if (percent >= 50) {
+            feedback.innerText = "👍 Good Job!";
+            feedback.style.color = "yellow";
+        } 
+        else {
+            feedback.innerText = "😅 Keep Practicing!";
+            feedback.style.color = "red";
+        }
+
+    } else {
+        count++;
+        text.innerText = count + "%";
+        document.querySelector(".circle").style.background =
+            "conic-gradient(#ff758c " + (count * 3.6) + "deg, #eee 0deg)";
+    }
+}, 20);
+</script>
 
 </body>
 </html>

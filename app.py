@@ -2,21 +2,24 @@ from flask import Flask, render_template, request, redirect, session
 import sqlite3
 
 app = Flask(__name__)
-app.secret_key = 'secret123'  # Required for session
+app.secret_key = 'secret123'
 
-# Create database
+# ------------------ DATABASE SETUP ------------------
+
 def init_db():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
+
+    # Users table
     c.execute('''CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT,
                     password TEXT
                 )''')
+
     conn.commit()
     conn.close()
 
-init_db()
 def add_questions():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
@@ -31,7 +34,6 @@ def add_questions():
                     answer TEXT
                 )''')
 
-    # Insert sample questions (only once)
     c.execute("SELECT COUNT(*) FROM questions")
     count = c.fetchone()[0]
 
@@ -45,9 +47,27 @@ def add_questions():
     conn.commit()
     conn.close()
 
-add_questions()
+def create_scores_table():
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
 
-# LOGIN ROUTE
+    c.execute('''CREATE TABLE IF NOT EXISTS scores (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT,
+                    score INTEGER,
+                    total INTEGER
+                )''')
+
+    conn.commit()
+    conn.close()
+
+init_db()
+add_questions()
+create_scores_table()
+
+# ------------------ ROUTES ------------------
+
+# LOGIN
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
@@ -63,7 +83,7 @@ def home():
         conn.close()
 
         if user:
-            session['user'] = username   # store user in session
+            session['user'] = username
             return redirect('/dashboard')
         else:
             return "Invalid Credentials ❌"
@@ -71,7 +91,7 @@ def home():
     return render_template('login.html')
 
 
-# SIGNUP ROUTE
+# SIGNUP
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -91,22 +111,16 @@ def signup():
     return render_template('signup.html')
 
 
-# DASHBOARD ROUTE
+# DASHBOARD
 @app.route('/dashboard')
 def dashboard():
     if 'user' in session:
         return render_template('dashboard.html', user=session['user'])
-    else:
-        return redirect('/')
-
-
-# LOGOUT ROUTE
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
     return redirect('/')
 
-@app.route('/quiz', methods=['GET', 'POST'])
+
+# QUIZ
+@app.route('/quiz', methods=['GET'])
 def quiz():
     if 'user' not in session:
         return redirect('/')
@@ -120,10 +134,15 @@ def quiz():
     conn.close()
 
     return render_template('quiz.html', questions=questions)
+
+
+# RESULT + STORE SCORE
 @app.route('/result', methods=['POST'])
 def result():
     if 'user' not in session:
         return redirect('/')
+
+    username = session['user']
 
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
@@ -141,10 +160,57 @@ def result():
     total = len(questions)
     percentage = round((score / total) * 100) if total > 0 else 0
 
+    # Store score
+    c.execute("INSERT INTO scores (username, score, total) VALUES (?, ?, ?)",
+              (username, score, total))
+
+    conn.commit()
     conn.close()
 
     return render_template('result.html', score=score, total=total, percentage=percentage)
 
 
+# LEADERBOARD
+@app.route('/leaderboard')
+def leaderboard():
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT username, MAX(score), total 
+        FROM scores 
+        GROUP BY username 
+        ORDER BY MAX(score) DESC
+    """)
+
+    rows = c.fetchall()
+    conn.close()
+
+    # 🔥 ADD RANK LOGIC
+    data = []
+    rank = 0
+    prev_score = None
+    count = 0
+
+    for row in rows:
+        count += 1
+        score = row[1]
+
+        if score != prev_score:
+            rank = count
+
+        data.append((rank, row[0], row[1], row[2]))
+        prev_score = score
+
+    return render_template('leaderboard.html', data=data)
+
+# LOGOUT
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect('/')
+
+
+# RUN
 if __name__ == '__main__':
     app.run(debug=True)

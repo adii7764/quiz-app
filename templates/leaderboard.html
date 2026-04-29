@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaderboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>Leaderboard 🏆</h2>
+
+        <table>
+            <tr>
+                <th>Rank</th>
+                <th>User</th>
+                <th>Score</th>
+            </tr>
+
+            {% for row in data %}
+            <tr>
+                <td>
+                    {% if row[0] == 1 %} 🥇
+                    {% elif row[0] == 2 %} 🥈
+                    {% elif row[0] == 3 %} 🥉
+                    {% else %} {{ row[0] }}
+                    {% endif %}
+                </td>
+
+                <td>{{ row[1] }}</td>
+                <td>{{ row[2] }} / {{ row[3] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <br>
+
+        <a href="/dashboard">
+            <button>Back</button>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>
