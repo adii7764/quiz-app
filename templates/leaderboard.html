@@ -5,61 +5,506 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leaderboard — QuizIQ</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    /* ── Tab System ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 9px 12px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 9px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Chart Containers ── */
+    .chart-wrap {
+      position: relative;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .chart-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chart-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+      margin-left: auto;
+    }
+    .chart-canvas-wrap {
+      position: relative;
+      height: 240px;
+    }
+    .chart-canvas-wrap.tall { height: 300px; }
+
+    /* ── Insight Cards ── */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .insight-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+    }
+    .insight-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .insight-val.accent  { color: var(--accent); }
+    .insight-val.gold    { color: var(--gold); }
+    .insight-val.green   { color: var(--accent3); }
+    .insight-lbl {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Player Row Expanded ── */
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      transition: border-color 0.2s;
+    }
+    .player-row.me {
+      border-color: rgba(124,106,255,0.35);
+      background: rgba(124,106,255,0.07);
+    }
+    .player-row:hover { border-color: rgba(255,255,255,0.12); }
+
+    .player-rank {
+      width: 34px; height: 34px;
+      display: grid; place-items: center;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .player-info { flex: 1; min-width: 0; }
+    .player-name {
+      font-weight: 600;
+      font-size: 14px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .you-tag {
+      font-size: 11px;
+      background: rgba(124,106,255,0.2);
+      color: var(--accent);
+      padding: 2px 7px;
+      border-radius: 100px;
+      font-weight: 600;
+    }
+    .player-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .player-bar-wrap { width: 90px; flex-shrink: 0; }
+    .mini-bar-bg {
+      height: 6px; background: var(--surface); border-radius: 100px; overflow: hidden;
+    }
+    .mini-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    }
+    .mini-bar-label { font-size: 11px; color: var(--muted); text-align: right; margin-top: 3px; }
+
+    .player-score {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      flex-shrink: 0;
+      text-align: right;
+      min-width: 50px;
+    }
+    .player-actions { flex-shrink: 0; }
+
+    @media (max-width: 520px) {
+      .insights-grid { grid-template-columns: repeat(3, 1fr); }
+      .player-bar-wrap { display: none; }
+      .tab-btn { font-size: 12px; padding: 8px 8px; }
+    }
+  </style>
 </head>
 <body>
-<div class="page page-wide">
-  <div class="card card-wide">
+<div class="page page-wide" style="padding-top:32px;padding-bottom:40px;">
+  <div class="card card-xl" style="max-width:860px;">
+
+    <!-- Header -->
     <div class="page-bar">
       <div>
         <h2 class="page-title">Leaderboard 🏆</h2>
-        <p class="text-muted">Best scores across all quizzes</p>
+        <p class="text-muted">{{ data|length }} player{{ 's' if data|length != 1 else '' }} ranked</p>
       </div>
       <a href="/dashboard" class="btn btn-outline btn-sm">← Back</a>
     </div>
 
     {% if data %}
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Player</th>
-          <th>Best Score</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in data %}
-        <tr {% if row.is_me %}class="highlight"{% endif %}>
-          <td>
-            {% if row.rank == 1 %}<span class="rank-badge rank-1">🥇</span>
-            {% elif row.rank == 2 %}<span class="rank-badge rank-2">🥈</span>
-            {% elif row.rank == 3 %}<span class="rank-badge rank-3">🥉</span>
-            {% else %}<span class="rank-badge rank-n">#{{ row.rank }}</span>
-            {% endif %}
-          </td>
-          <td>
+    <!-- Insight Strip -->
+    <div class="insights-grid">
+      <div class="insight-card">
+        <div class="insight-val gold">{{ data[0].username if data else '—' }}</div>
+        <div class="insight-lbl">Top Player</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-val green">
+          {{ (data | map(attribute='avg_pct') | list | sum / data|length) | round(1) if data else 0 }}%
+        </div>
+        <div class="insight-lbl">Avg Score</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-val accent">
+          {{ data | map(attribute='attempts') | list | sum }}
+        </div>
+        <div class="insight-lbl">Total Attempts</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('rankings',this)">📋 Rankings</button>
+      <button class="tab-btn" onclick="switchTab('performance',this)">📊 Performance</button>
+      <button class="tab-btn" onclick="switchTab('distribution',this)">🎯 Distribution</button>
+      <button class="tab-btn" onclick="switchTab('quizzes',this)">🗂 By Quiz</button>
+    </div>
+
+    <!-- ── Tab: Rankings ── -->
+    <div class="tab-panel active" id="tab-rankings">
+      {% for row in data %}
+      {% set pct = row.best_pct %}
+      <div class="player-row {% if row.is_me %}me{% endif %}">
+        <div class="player-rank
+          {% if row.rank == 1 %}rank-1{% elif row.rank == 2 %}rank-2{% elif row.rank == 3 %}rank-3{% else %}rank-n{% endif %}">
+          {% if row.rank == 1 %}🥇{% elif row.rank == 2 %}🥈{% elif row.rank == 3 %}🥉
+          {% else %}<span style="font-family:'Syne',sans-serif;font-size:12px;color:var(--muted)">#{{ row.rank }}</span>
+          {% endif %}
+        </div>
+
+        <div class="player-info">
+          <div class="player-name">
             {{ row.username }}
-            {% if row.is_me %}<span style="color:var(--accent);font-size:12px;margin-left:6px;">you</span>{% endif %}
-          </td>
-          <td>{{ row.score }} / {{ row.total }}</td>
-          <td>
-            {% if row.is_me %}
-            <form method="POST" action="/delete_score" onsubmit="return confirm('Remove your score?')">
-              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-            </form>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            {% if row.is_me %}<span class="you-tag">you</span>{% endif %}
+          </div>
+          <div class="player-meta">{{ row.attempts }} attempt{{ 's' if row.attempts != 1 else '' }} · avg {{ row.avg_pct }}%</div>
+        </div>
+
+        <div class="player-bar-wrap">
+          <div class="mini-bar-bg">
+            <div class="mini-bar-fill" style="width:{{ pct }}%"></div>
+          </div>
+          <div class="mini-bar-label">{{ pct }}%</div>
+        </div>
+
+        <div class="player-score">{{ row.score }}/{{ row.total }}</div>
+
+        <div class="player-actions">
+          {% if row.is_me %}
+          <form method="POST" action="/delete_score" onsubmit="return confirm('Remove your score from leaderboard?')">
+            <button type="submit" class="btn btn-danger btn-sm">✕</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- ── Tab: Performance (Bar Chart) ── -->
+    <div class="tab-panel" id="tab-performance">
+      <div class="chart-wrap">
+        <div class="chart-title">
+          Best vs Average Score
+          <span class="chart-subtitle">Top 10 players · % accuracy</span>
+        </div>
+        <div class="chart-canvas-wrap tall">
+          <canvas id="barChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Distribution (Doughnut + Histogram) ── -->
+    <div class="tab-panel" id="tab-distribution">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="chart-wrap">
+          <div class="chart-title">Score Buckets</div>
+          <div class="chart-canvas-wrap">
+            <canvas id="donutChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">
+            Score Histogram
+            <span class="chart-subtitle">All attempts</span>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="histChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: By Quiz ── -->
+    <div class="tab-panel" id="tab-quizzes">
+      <div class="chart-wrap">
+        <div class="chart-title">
+          Quiz Participation & Avg Score
+          <span class="chart-subtitle">Per quiz code</span>
+        </div>
+        <div class="chart-canvas-wrap tall">
+          <canvas id="quizChart"></canvas>
+        </div>
+      </div>
+    </div>
+
     {% else %}
     <div class="empty-state">
       <div class="empty-icon">📭</div>
       <p>No scores yet. Be the first!</p>
     </div>
     {% endif %}
+
   </div>
 </div>
+
+<script>
+// ── Data from Flask ──
+const cd = {{ chart_data | tojson }};
+
+// ── Chart.js global defaults ──
+Chart.defaults.color = 'rgba(240,240,248,0.5)';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+Chart.defaults.plugins.legend.labels.borderRadius = 4;
+Chart.defaults.plugins.legend.labels.useBorderRadius = true;
+
+const gridColor = 'rgba(255,255,255,0.05)';
+
+// ── Shared tooltip style ──
+const tooltipPlugin = {
+  backgroundColor: '#1a1a24',
+  borderColor: 'rgba(255,255,255,0.08)',
+  borderWidth: 1,
+  padding: 12,
+  titleColor: '#f0f0f8',
+  bodyColor: 'rgba(240,240,248,0.65)',
+  cornerRadius: 10,
+};
+
+// ── 1. Bar Chart — Best vs Avg ──
+const barCtx = document.getElementById('barChart').getContext('2d');
+new Chart(barCtx, {
+  type: 'bar',
+  data: {
+    labels: cd.bar_labels,
+    datasets: [
+      {
+        label: 'Best Score %',
+        data: cd.bar_scores,
+        backgroundColor: 'rgba(124,106,255,0.75)',
+        borderColor: 'rgba(124,106,255,1)',
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+      },
+      {
+        label: 'Avg Score %',
+        data: cd.bar_avg,
+        backgroundColor: 'rgba(255,107,157,0.6)',
+        borderColor: 'rgba(255,107,157,1)',
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: { ...tooltipPlugin, callbacks: {
+        label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}%`
+      }}
+    },
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { maxRotation: 30 } },
+      y: {
+        grid: { color: gridColor },
+        min: 0, max: 100,
+        ticks: { callback: v => v + '%' }
+      }
+    }
+  }
+});
+
+// ── 2. Donut Chart — Score Buckets ──
+const donutCtx = document.getElementById('donutChart').getContext('2d');
+const bucketLabels = ['0–20%','20–40%','40–60%','60–80%','80–100%'];
+const bucketColors = ['#ff4560','#ff9f43','#ffd700','#7c6aff','#00d4aa'];
+new Chart(donutCtx, {
+  type: 'doughnut',
+  data: {
+    labels: bucketLabels,
+    datasets: [{
+      data: cd.dist,
+      backgroundColor: bucketColors.map(c => c + 'cc'),
+      borderColor: bucketColors,
+      borderWidth: 2,
+      hoverOffset: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '60%',
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 14 } },
+      tooltip: { ...tooltipPlugin, callbacks: {
+        label: ctx => ` ${ctx.label}: ${ctx.parsed} player${ctx.parsed !== 1 ? 's' : ''}`
+      }}
+    }
+  }
+});
+
+// ── 3. Histogram (same dist data as horizontal bar) ──
+const histCtx = document.getElementById('histChart').getContext('2d');
+new Chart(histCtx, {
+  type: 'bar',
+  data: {
+    labels: bucketLabels,
+    datasets: [{
+      label: 'Players',
+      data: cd.dist,
+      backgroundColor: bucketColors.map(c => c + 'aa'),
+      borderColor: bucketColors,
+      borderWidth: 1.5,
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { ...tooltipPlugin }
+    },
+    scales: {
+      x: {
+        grid: { color: gridColor },
+        ticks: { stepSize: 1, callback: v => Math.round(v) }
+      },
+      y: { grid: { color: gridColor } }
+    }
+  }
+});
+
+// ── 4. Quiz Stats — grouped bar ──
+const quizCtx = document.getElementById('quizChart').getContext('2d');
+new Chart(quizCtx, {
+  type: 'bar',
+  data: {
+    labels: cd.quiz_labels.length ? cd.quiz_labels : ['—'],
+    datasets: [
+      {
+        label: 'Players',
+        data: cd.quiz_players.length ? cd.quiz_players : [0],
+        backgroundColor: 'rgba(0,212,170,0.65)',
+        borderColor: 'rgba(0,212,170,1)',
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+        yAxisID: 'yPlayers',
+      },
+      {
+        label: 'Avg Score %',
+        data: cd.quiz_avg.length ? cd.quiz_avg : [0],
+        backgroundColor: 'rgba(124,106,255,0.65)',
+        borderColor: 'rgba(124,106,255,1)',
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+        yAxisID: 'yPct',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: { ...tooltipPlugin }
+    },
+    scales: {
+      x: { grid: { color: gridColor } },
+      yPlayers: {
+        position: 'left',
+        grid: { color: gridColor },
+        ticks: { stepSize: 1, callback: v => Math.round(v) },
+        title: { display: true, text: 'Players', color: 'rgba(0,212,170,0.8)' }
+      },
+      yPct: {
+        position: 'right',
+        grid: { drawOnChartArea: false },
+        min: 0, max: 100,
+        ticks: { callback: v => v + '%' },
+        title: { display: true, text: 'Avg Score', color: 'rgba(124,106,255,0.8)' }
+      }
+    }
+  }
+});
+
+// ── Tab switching ──
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
 </body>
 </html>

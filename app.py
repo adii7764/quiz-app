@@ -175,11 +175,37 @@ def leaderboard():
     current_user = session['user']
     with get_db() as conn:
         rows = conn.execute("""
-            SELECT username, MAX(score) as best_score, total
+            SELECT username, MAX(score) as best_score, total,
+                   COUNT(*) as attempts,
+                   ROUND(AVG(CAST(score AS REAL) / NULLIF(total,0) * 100), 1) as avg_pct,
+                   MAX(CAST(score AS REAL) / NULLIF(total,0) * 100) as best_pct
             FROM scores
             GROUP BY username
             ORDER BY best_score DESC
         """).fetchall()
+
+        # Per-quiz participation stats
+        quiz_stats = conn.execute("""
+            SELECT code, COUNT(DISTINCT username) as players,
+                   ROUND(AVG(CAST(score AS REAL) / NULLIF(total,0) * 100), 1) as avg_pct
+            FROM scores
+            GROUP BY code
+            ORDER BY players DESC
+            LIMIT 8
+        """).fetchall()
+
+        # Score distribution buckets: 0-20, 20-40, 40-60, 60-80, 80-100
+        dist = conn.execute("""
+            SELECT
+                SUM(CASE WHEN pct < 20  THEN 1 ELSE 0 END),
+                SUM(CASE WHEN pct >= 20 AND pct < 40 THEN 1 ELSE 0 END),
+                SUM(CASE WHEN pct >= 40 AND pct < 60 THEN 1 ELSE 0 END),
+                SUM(CASE WHEN pct >= 60 AND pct < 80 THEN 1 ELSE 0 END),
+                SUM(CASE WHEN pct >= 80 THEN 1 ELSE 0 END)
+            FROM (
+                SELECT CAST(score AS REAL) / NULLIF(total,0) * 100 as pct FROM scores
+            )
+        """).fetchone()
 
     data = []
     rank = None
@@ -192,11 +218,24 @@ def leaderboard():
             'username': row['username'],
             'score': row['best_score'],
             'total': row['total'],
+            'attempts': row['attempts'],
+            'avg_pct': row['avg_pct'] or 0,
+            'best_pct': round(row['best_pct'] or 0, 1),
             'is_me': row['username'] == current_user
         })
         prev_score = row['best_score']
 
-    return render_template('leaderboard.html', data=data)
+    chart_data = {
+        'bar_labels': [d['username'] for d in data[:10]],
+        'bar_scores': [d['best_pct'] for d in data[:10]],
+        'bar_avg': [d['avg_pct'] for d in data[:10]],
+        'dist': list(dist) if dist else [0,0,0,0,0],
+        'quiz_labels': [q['code'] for q in quiz_stats],
+        'quiz_players': [q['players'] for q in quiz_stats],
+        'quiz_avg': [q['avg_pct'] for q in quiz_stats],
+    }
+
+    return render_template('leaderboard.html', data=data, chart_data=chart_data)
 
 
 @app.route('/delete_score', methods=['POST'])
