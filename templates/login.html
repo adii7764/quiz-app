@@ -1,25 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — QuizIQ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-
-<div class="container">
-    <div class="card">
-        <div class="logo">📚</div>
-        <h2>Login</h2>
-
-        <form method="POST">
-            <input type="text" name="username" placeholder="Enter Username" required>
-            <input type="password" name="password" placeholder="Enter Password" required>
-            <button type="submit">Login</button>
-        </form>
-
-        <p>Don't have an account? <a href="/signup">Signup</a></p>
+<div class="page">
+  <div class="card">
+    <div class="brand">
+      <div class="brand-icon">🧠</div>
+      <span class="brand-name">QuizIQ</span>
     </div>
-</div>
 
+    <h2 class="page-title">Welcome back</h2>
+    <p class="page-subtitle">Sign in to your account</p>
+
+    {% if error %}
+    <div class="alert alert-error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="Enter username" required autofocus>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter password" required>
+      </div>
+      <div class="mt-2">
+        <button type="submit" class="btn btn-primary">Sign In →</button>
+      </div>
+    </form>
+
+    <p class="auth-footer">Don't have an account? <a href="/signup">Create one</a></p>
+  </div>
+</div>
 </body>
 </html>

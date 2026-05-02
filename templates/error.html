@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error — QuizIQ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="page">
+  <div class="card error-page">
+    <div class="error-code">4⚠️3</div>
+    <h2 class="page-title mt-2">{{ message }}</h2>
+    <p class="text-muted mt-1">You don't have permission to access this page.</p>
+    <a href="/dashboard" class="btn btn-primary mt-3">Go to Dashboard</a>
+  </div>
+</div>
+</body>
+</html>

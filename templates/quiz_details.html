@@ -1,87 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Quiz Details</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th, td {
-            padding: 10px;
-            text-align: center;
-        }
-
-        th {
-            background: rgba(255,255,255,0.2);
-        }
-
-        tr {
-            background: rgba(255,255,255,0.1);
-            margin-bottom: 5px;
-        }
-
-        tr:hover {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .top1 { color: gold; font-weight: bold; }
-        .top2 { color: silver; font-weight: bold; }
-        .top3 { color: #cd7f32; font-weight: bold; }
-
-        .empty {
-            text-align: center;
-            margin-top: 20px;
-            opacity: 0.7;
-        }
-
-        .back-btn {
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz {{ code }} — QuizIQ Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+<div class="page page-wide">
+  <div class="card card-wide">
+    <div class="page-bar">
+      <div>
+        <h2 class="page-title">Quiz Results</h2>
+        <p class="text-muted">Code: <span style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:700;">{{ code }}</span></p>
+      </div>
+      <a href="/admin/quizzes" class="btn btn-outline btn-sm">← Quizzes</a>
+    </div>
 
-<div class="container">
-<div class="card">
-
-<h2>📋 Quiz Code: <span style="color:#ffd700;">{{ code }}</span></h2>
-
-{% if data|length == 0 %}
-    <p class="empty">No one has attempted this quiz yet 😴</p>
-{% else %}
-
-<table>
-    <tr>
-        <th>Rank 🏆</th>
-        <th>User 👤</th>
-        <th>Score 📊</th>
-    </tr>
-
-    {% for row in data %}
-    <tr class="
-        {% if row[0] == 1 %}top1{% elif row[0] == 2 %}top2{% elif row[0] == 3 %}top3{% endif %}
-    ">
-        <td>{{ row[0] }}</td>
-        <td>{{ row[1] }}</td>
-        <td>{{ row[2] }}/{{ row[3] }}</td>
-    </tr>
-    {% endfor %}
-</table>
-
-{% endif %}
-
-<div class="back-btn">
-    <a href="/admin/quizzes">
-        <button>⬅ Back to Quizzes</button>
-    </a>
+    {% if data %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Player</th>
+          <th>Score</th>
+          <th>Accuracy</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in data %}
+        {% set pct = ((row.score / row.total) * 100)|round|int if row.total else 0 %}
+        <tr>
+          <td>
+            {% if row.rank == 1 %}<span class="rank-badge rank-1">🥇</span>
+            {% elif row.rank == 2 %}<span class="rank-badge rank-2">🥈</span>
+            {% elif row.rank == 3 %}<span class="rank-badge rank-3">🥉</span>
+            {% else %}<span class="rank-badge rank-n">#{{ row.rank }}</span>
+            {% endif %}
+          </td>
+          <td>{{ row.username }}</td>
+          <td>{{ row.score }} / {{ row.total }}</td>
+          <td>{{ pct }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">😴</div>
+      <p>No one has attempted this quiz yet.</p>
+    </div>
+    {% endif %}
+  </div>
 </div>
-
-</div>
-</div>
-
 </body>
 </html>

@@ -1,77 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>All Quizzes</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Quizzes — QuizIQ Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-
-<div class="container">
-<div class="card">
-
-<h2>All Generated Quizzes 📊</h2>
-
-{% for q in quizzes %}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-
-    <!-- VIEW BUTTON -->
-    <a href="/admin/quiz/{{ q[0] }}">
-        <button>🔑 {{ q[0] }}</button>
-    </a>
-
-    <!-- DELETE BUTTON -->
-    <button onclick="openDeleteModal('{{ q[0] }}')" style="background:red;">
-        Delete ❌
-    </button>
-
-</div>
-{% endfor %}
-
-<!-- HIDDEN FORM -->
-<form id="deleteForm" method="POST" style="display:none;"></form>
-
-<br><br>
-<a href="/dashboard">
-    <button>⬅ Back to Dashboard</button>
-</a>
-
-</div>
-</div>
-
-<!-- 🔥 DELETE MODAL -->
-<div id="deleteModal" class="modal">
-    <div class="modal-content">
-        <h3>Delete Quiz ❗</h3>
-        <p>Are you sure you want to delete this quiz?</p>
-
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button id="confirmDeleteBtn" style="background:red;">Delete</button>
-            <button onclick="closeModal()">Cancel</button>
-        </div>
+<div class="page page-wide">
+  <div class="card card-wide">
+    <div class="page-bar">
+      <div>
+        <h2 class="page-title">All Quizzes 📊</h2>
+        <p class="text-muted">{{ quizzes|length }} quiz{{ 'zes' if quizzes|length != 1 else '' }} total</p>
+      </div>
+      <a href="/dashboard" class="btn btn-outline btn-sm">← Back</a>
     </div>
+
+    {% if quizzes %}
+    <div class="quiz-list">
+      {% for q in quizzes %}
+      <div class="quiz-row">
+        <span class="quiz-code-tag">{{ q[0] }}</span>
+        <div class="quiz-row-actions">
+          <a href="/admin/quiz/{{ q[0] }}" class="btn btn-outline btn-sm">View Results</a>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete('{{ q[0] }}')">Delete</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <p>No quizzes yet. <a href="/admin" style="color:var(--accent)">Create one</a></p>
+    </div>
+    {% endif %}
+  </div>
 </div>
 
-<!-- 🔥 JS -->
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal-box">
+    <div style="font-size:36px;margin-bottom:8px;">🗑️</div>
+    <h3>Delete Quiz</h3>
+    <p>This will delete the quiz and all its scores. This cannot be undone.</p>
+    <form id="delForm" method="POST" style="display:contents">
+      <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    </form>
+    <button class="btn btn-outline mt-1" onclick="document.getElementById('delModal').classList.remove('open')">Cancel</button>
+  </div>
+</div>
+
 <script>
-let deleteCode = null;
-
-function openDeleteModal(code) {
-    deleteCode = code;
-    document.getElementById("deleteModal").style.display = "flex";
+function confirmDelete(code) {
+  document.getElementById('delForm').action = '/admin/delete_quiz/' + code;
+  document.getElementById('delModal').classList.add('open');
 }
-
-function closeModal() {
-    document.getElementById("deleteModal").style.display = "none";
-}
-
-document.getElementById("confirmDeleteBtn").onclick = function() {
-    if (deleteCode) {
-        let form = document.getElementById("deleteForm");
-        form.action = "/admin/delete_quiz/" + deleteCode;
-        form.submit();
-    }
-};
 </script>
-
 </body>
 </html>

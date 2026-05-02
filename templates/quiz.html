@@ -1,124 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Quiz</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz — QuizIQ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+<div class="page">
+  <div class="card card-wide">
 
-<div class="container">
-    <div class="card">
-        <h2>Quiz Time 🧠</h2>
-
-        <!-- TIMER -->
-        <p id="timer">Time Left: 60s</p>
-
-        <form method="POST" action="/result" id="quizForm">
-
-            <!-- QUIZ CODE -->
-            <input type="hidden" name="code" value="{{ code }}">
-
-            {% for q in questions %}
-            <div class="question-box" style="{% if loop.index != 1 %}display:none{% endif %}">
-                
-                <p class="question"><b>{{ loop.index }}. {{ q[2] }}</b></p>
-
-                <label class="option">
-                    <input type="radio" name="q{{ q[0] }}" value="{{ q[3] }}">
-                    <span>{{ q[3] }}</span>
-                </label>
-
-                <label class="option">
-                    <input type="radio" name="q{{ q[0] }}" value="{{ q[4] }}">
-                    <span>{{ q[4] }}</span>
-                </label>
-
-                <label class="option">
-                    <input type="radio" name="q{{ q[0] }}" value="{{ q[5] }}">
-                    <span>{{ q[5] }}</span>
-                </label>
-
-                <label class="option">
-                    <input type="radio" name="q{{ q[0] }}" value="{{ q[6] }}">
-                    <span>{{ q[6] }}</span>
-                </label>
-
-            </div>
-            {% endfor %}
-
-            <!-- NAV BUTTONS -->
-            <div class="nav-buttons">
-                <button type="button" onclick="prevQuestion()">Previous</button>
-                <button type="button" onclick="nextQuestion()">Next</button>
-            </div>
-
-            <br>
-            <button type="submit">Submit</button>
-        </form>
+    <!-- Header -->
+    <div class="quiz-header">
+      <div class="quiz-progress">
+        Question <strong id="q-cur">1</strong> of <strong>{{ questions|length }}</strong>
+      </div>
+      <div class="timer-wrap">
+        <span class="timer-icon">⏱</span>
+        <span id="timer-val">60</span>
+      </div>
     </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width: {{ (1/questions|length*100)|round }}%"></div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" action="/result" id="quizForm">
+      <input type="hidden" name="code" value="{{ code }}">
+
+      {% for q in questions %}
+      <div class="question-block {% if loop.first %}active{% endif %}" id="qblock-{{ loop.index0 }}">
+        <p class="question-num">Question {{ loop.index }}</p>
+        <p class="question-text">{{ q[2] }}</p>
+
+        <div class="options">
+          {% set letters = ['A','B','C','D'] %}
+          {% for i in range(4) %}
+          <label class="option-label">
+            <input type="radio" name="q{{ q[0] }}" value="{{ q[3+i] }}">
+            <div class="option-marker">{{ letters[i] }}</div>
+            <span>{{ q[3+i] }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Navigation -->
+      <div class="quiz-nav">
+        <button type="button" class="btn btn-outline" onclick="prevQ()" id="btn-prev" style="display:none">← Prev</button>
+        <button type="button" class="btn btn-primary" onclick="nextQ()" id="btn-next">Next →</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit" style="display:none">Submit Quiz ✓</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
-let current = 0;
-let questions = document.querySelectorAll(".question-box");
+const total = {{ questions|length }};
+let cur = 0;
+let timeLeft = 60;
+let timerEl = document.getElementById('timer-val');
+let timerHandle;
+const fill = document.getElementById('progress-fill');
 
-let timePerQuestion = 60;
-let timer = document.getElementById("timer");
-let countdown;
-
-// SHOW QUESTION
-function showQuestion(index) {
-    questions.forEach((q, i) => {
-        q.style.display = i === index ? "block" : "none";
-    });
-
-    startTimer();
+function showQ(i) {
+  document.querySelectorAll('.question-block').forEach((b, idx) => {
+    b.classList.toggle('active', idx === i);
+  });
+  document.getElementById('q-cur').textContent = i + 1;
+  fill.style.width = ((i + 1) / total * 100) + '%';
+  document.getElementById('btn-prev').style.display = i > 0 ? '' : 'none';
+  const isLast = i === total - 1;
+  document.getElementById('btn-next').style.display = isLast ? 'none' : '';
+  document.getElementById('btn-submit').style.display = isLast ? '' : 'none';
+  resetTimer();
 }
 
-// NEXT QUESTION
-function nextQuestion() {
-    if (current < questions.length - 1) {
-        current++;
-        showQuestion(current);
-    } else {
-        submitQuiz();
+function nextQ() {
+  if (cur < total - 1) { cur++; showQ(cur); }
+}
+
+function prevQ() {
+  if (cur > 0) { cur--; showQ(cur); }
+}
+
+function resetTimer() {
+  clearInterval(timerHandle);
+  timeLeft = 60;
+  timerEl.textContent = timeLeft;
+  timerEl.classList.remove('warning');
+  timerHandle = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = timeLeft;
+    if (timeLeft <= 10) timerEl.classList.add('warning');
+    if (timeLeft <= 0) {
+      clearInterval(timerHandle);
+      if (cur < total - 1) { cur++; showQ(cur); }
+      else document.getElementById('quizForm').submit();
     }
+  }, 1000);
 }
 
-// PREVIOUS QUESTION
-function prevQuestion() {
-    if (current > 0) {
-        current--;
-        showQuestion(current);
-    }
-}
-
-// TIMER LOGIC
-function startTimer() {
-    let time = timePerQuestion;
-
-    clearInterval(countdown);
-
-    countdown = setInterval(() => {
-        timer.innerText = "Time Left: " + time + "s";
-        time--;
-
-        if (time < 0) {
-            clearInterval(countdown);
-            nextQuestion(); // auto next
-        }
-    }, 1000);
-}
-
-// SUBMIT
-function submitQuiz() {
-    clearInterval(countdown);
-    document.getElementById("quizForm").submit();
-}
-
-// INIT
-showQuestion(current);
+showQ(0);
 </script>
-
 </body>
 </html>

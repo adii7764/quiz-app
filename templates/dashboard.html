@@ -1,51 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — QuizIQ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-
-<div class="container">
-    <div class="card">
-        <h2>Welcome, {{ user }} 🎉</h2>
-
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
-
-            <!-- JOIN QUIZ -->
-            <a href="/join">
-                <button>Join Quiz 🔑</button>
-            </a>
-
-            <!-- LEADERBOARD -->
-            <a href="/leaderboard">
-                <button>Leaderboard 🏆</button>
-            </a>
-
-            <!-- HISTORY -->
-            <a href="/history">
-                <button>My History 📜</button>
-            </a>
-
-            <!-- ADMIN ONLY -->
-            {% if user == 'admin' %}
-            <a href="/admin">
-                <button>Generate Quiz 👑</button>
-            </a>
-            <a href="/admin/quizzes">
-                <button>View Quizzes 📊</button>
-            </a>
-            {% endif %}
-
-            <!-- LOGOUT -->
-            <a href="/logout">
-                <button>Logout 🚪</button>
-            </a>
-
-        </div>
-
+<div class="page">
+  <div class="card">
+    <div class="dash-header">
+      <p class="dash-welcome">Good to see you,</p>
+      <h2 class="dash-name">{{ user }} 👋</h2>
     </div>
-</div>
 
+    <div class="dash-grid">
+      <a href="/join" class="dash-item">
+        <div class="dash-item-icon icon-quiz">🔑</div>
+        <div class="dash-item-text">
+          <strong>Join Quiz</strong>
+          <span>Enter a quiz code</span>
+        </div>
+      </a>
+
+      <a href="/leaderboard" class="dash-item">
+        <div class="dash-item-icon icon-board">🏆</div>
+        <div class="dash-item-text">
+          <strong>Leaderboard</strong>
+          <span>Top players</span>
+        </div>
+      </a>
+
+      <a href="/history" class="dash-item full-width">
+        <div class="dash-item-icon icon-history">📜</div>
+        <div class="dash-item-text">
+          <strong>My History</strong>
+          <span>View past attempts</span>
+        </div>
+      </a>
+
+      {% if user == 'admin' %}
+      <hr class="divider" style="grid-column:span 2; margin: 4px 0;">
+
+      <a href="/admin" class="dash-item">
+        <div class="dash-item-icon icon-admin">✏️</div>
+        <div class="dash-item-text">
+          <strong>Create Quiz</strong>
+          <span>Generate a quiz</span>
+        </div>
+      </a>
+
+      <a href="/admin/quizzes" class="dash-item">
+        <div class="dash-item-icon icon-view">📊</div>
+        <div class="dash-item-text">
+          <strong>View Quizzes</strong>
+          <span>Manage all quizzes</span>
+        </div>
+      </a>
+      {% endif %}
+    </div>
+
+    <hr class="divider">
+
+    <a href="/logout" class="btn btn-outline" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+      🚪 Sign Out
+    </a>
+  </div>
+</div>
 </body>
 </html>

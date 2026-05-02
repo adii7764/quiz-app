@@ -1,53 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Join Quiz</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Quiz — QuizIQ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-
-<div class="container">
-<div class="card">
-
-<h2>Join Quiz 🔑</h2>
-
-<form method="POST">
-    <input type="text" name="code" placeholder="Enter Quiz Code" required>
-    <br><br>
-    <button type="submit">Join</button>
-</form>
-
-<br>
-<a href="/dashboard"><button>Back</button></a>
-
-</div>
-</div>
-
-<!-- 🔥 MODAL -->
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <p id="modalText"></p>
-        <button onclick="closeModal()">OK</button>
+<div class="page">
+  <div class="card">
+    <div class="brand">
+      <div class="brand-icon">🔑</div>
+      <span class="brand-name">Join Quiz</span>
     </div>
+
+    <h2 class="page-title">Enter quiz code</h2>
+    <p class="page-subtitle">Get the code from your quiz host</p>
+
+    {% if error %}
+    <div class="alert alert-error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <div class="field">
+        <label>Quiz Code</label>
+        <input type="text" name="code" placeholder="e.g. AB12CD"
+               style="text-transform:uppercase;letter-spacing:0.1em;font-size:18px;text-align:center;"
+               maxlength="6" required autofocus>
+      </div>
+      <div class="mt-2">
+        <button type="submit" class="btn btn-primary">Join Quiz →</button>
+      </div>
+    </form>
+
+    <div class="mt-2">
+      <a href="/dashboard" class="btn btn-outline">← Back</a>
+    </div>
+  </div>
 </div>
-
-<script>
-function showModal(message) {
-    document.getElementById("modalText").innerText = message;
-    document.getElementById("modal").style.display = "flex";
-}
-
-function closeModal() {
-    document.getElementById("modal").style.display = "none";
-}
-
-// 🔥 SHOW ERROR POPUP
-{% if error %}
-window.onload = function() {
-    showModal("{{ error }}");
-}
-{% endif %}
-</script>
-
 </body>
 </html>

@@ -1,74 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Result</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Result — QuizIQ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+<div class="page">
+  <div class="card result-center">
+    <h2 class="page-title">Quiz Complete! 🎯</h2>
 
-<div class="container">
-    <div class="card">
-        <h2>Your Score 🎯</h2>
-
-        <p><b>{{ score }} / {{ total }}</b></p>
-
-        <!-- 🔥 CIRCLE -->
-        <div class="circle">
-            <div class="inner-circle">
-                <span id="percentText">0%</span>
-            </div>
-        </div>
-
-        <!-- 🔥 FEEDBACK MESSAGE -->
-        <p id="feedback"></p>
-
-        <br>
-
-        <a href="/leaderboard">
-            <button>View Leaderboard 🏆</button>
-        </a>
-
-        <br><br>
-
-        <a href="/dashboard">
-            <button>Back to Dashboard</button>
-        </a>
+    <!-- SVG Ring -->
+    <div class="score-ring">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#7c6aff"/>
+            <stop offset="100%" style="stop-color:#ff6b9d"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-bg" cx="70" cy="70" r="54"/>
+        <circle class="ring-fill" id="ring" cx="70" cy="70" r="54"/>
+      </svg>
+      <div class="score-text">
+        <span class="score-pct" id="pct-text">0%</span>
+        <span class="score-label">score</span>
+      </div>
     </div>
+
+    <p class="score-fraction">{{ score }} / {{ total }} correct</p>
+    <div id="feedback-badge" class="feedback-badge"></div>
+
+    <div class="btn-group mt-3">
+      <a href="/leaderboard" class="btn btn-outline">🏆 Leaderboard</a>
+      <a href="/dashboard" class="btn btn-primary">Dashboard →</a>
+    </div>
+  </div>
 </div>
 
 <script>
-let percent = {{ percentage }};
+const target = {{ percentage }};
+const ring = document.getElementById('ring');
+const circumference = 2 * Math.PI * 54; // 339.29
 let count = 0;
 
-let text = document.getElementById("percentText");
-let feedback = document.getElementById("feedback");
-
-let interval = setInterval(() => {
-    if (count >= percent) {
-        clearInterval(interval);
-
-        // 🎯 FEEDBACK LOGIC
-        if (percent >= 80) {
-            feedback.innerText = "🔥 Excellent!";
-            feedback.style.color = "lime";
-        } 
-        else if (percent >= 50) {
-            feedback.innerText = "👍 Good Job!";
-            feedback.style.color = "yellow";
-        } 
-        else {
-            feedback.innerText = "😅 Keep Practicing!";
-            feedback.style.color = "red";
-        }
-
+const interval = setInterval(() => {
+  count = Math.min(count + 1, target);
+  document.getElementById('pct-text').textContent = count + '%';
+  ring.style.strokeDashoffset = circumference * (1 - count / 100);
+  if (count >= target) {
+    clearInterval(interval);
+    const fb = document.getElementById('feedback-badge');
+    if (target >= 80) {
+      fb.textContent = '🔥 Excellent work!';
+      fb.className = 'feedback-badge fb-excellent';
+    } else if (target >= 50) {
+      fb.textContent = '👍 Good job!';
+      fb.className = 'feedback-badge fb-good';
     } else {
-        count++;
-        text.innerText = count + "%";
-        document.querySelector(".circle").style.background =
-            "conic-gradient(#ff758c " + (count * 3.6) + "deg, #eee 0deg)";
+      fb.textContent = '😅 Keep practicing!';
+      fb.className = 'feedback-badge fb-practice';
     }
-}, 20);
+  }
+}, 15);
 </script>
-
 </body>
 </html>

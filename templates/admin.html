@@ -1,136 +1,157 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Generate Quiz</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Quiz — QuizIQ Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-
-<div class="container">
-<div class="card">
-
-<h2>Generate Quiz 👑</h2>
-
-<p>Question: <span id="count">1</span></p>
-
-<form id="quizForm">
-
-    <input type="text" id="question" placeholder="Question" required>
-
-    <input type="text" id="option1" placeholder="Option 1" required>
-    <input type="text" id="option2" placeholder="Option 2" required>
-    <input type="text" id="option3" placeholder="Option 3" required>
-    <input type="text" id="option4" placeholder="Option 4" required>
-
-    <input type="text" id="answer" placeholder="Correct Answer" required>
-
-    <br>
-
-    <!-- 🔥 NAV BUTTONS (ALWAYS VISIBLE) -->
-    <div class="nav-buttons">
-        <button type="button" onclick="prev()">⬅ Previous</button>
-        <button type="button" onclick="addQuestion()">➕ Add</button>
-        <button type="button" onclick="next()">Next ➡</button>
+<div class="page page-wide">
+  <div class="card card-xl">
+    <div class="page-bar">
+      <div>
+        <h2 class="page-title">Create Quiz 👑</h2>
+        <p class="text-muted">Build a quiz for your players</p>
+      </div>
+      <a href="/dashboard" class="btn btn-outline btn-sm">← Dashboard</a>
     </div>
 
-    <br>
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-num">{{ total }}</div>
+        <div class="stat-label">Total Quizzes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="q-total-count">1</div>
+        <div class="stat-label">Questions Added</div>
+      </div>
+    </div>
 
-    <button type="submit">🚀 Generate Quiz</button>
+    <form id="quizForm">
+      <div class="builder-header">
+        <div class="q-counter">Q <span id="q-idx">1</span></div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="prev()">← Prev</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="addQuestion()">+ Add</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="next()">Next →</button>
+        </div>
+      </div>
 
-</form>
+      <div class="field">
+        <label>Question</label>
+        <input type="text" id="question" placeholder="Type your question here…" required>
+      </div>
 
-<br>
-<a href="/dashboard"><button>Back</button></a>
+      <div class="options-grid">
+        <div class="field">
+          <label>Option A</label>
+          <input type="text" id="option1" placeholder="Option A">
+        </div>
+        <div class="field">
+          <label>Option B</label>
+          <input type="text" id="option2" placeholder="Option B">
+        </div>
+        <div class="field">
+          <label>Option C</label>
+          <input type="text" id="option3" placeholder="Option C">
+        </div>
+        <div class="field">
+          <label>Option D</label>
+          <input type="text" id="option4" placeholder="Option D">
+        </div>
+      </div>
 
+      <div class="field">
+        <label>Correct Answer (exact text)</label>
+        <input type="text" id="answer" placeholder="Must match one of the options above">
+      </div>
+
+      <button type="submit" class="btn btn-primary mt-2">🚀 Generate Quiz Code</button>
+    </form>
+  </div>
 </div>
+
+<!-- Success Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div style="font-size:40px;margin-bottom:8px;">🎉</div>
+    <h3>Quiz Created!</h3>
+    <p>Share this code with your players</p>
+    <div class="modal-code" id="modal-code"></div>
+    <button class="btn btn-primary" onclick="copyCode()">📋 Copy Code</button>
+    <button class="btn btn-outline mt-1" onclick="closeModal()">Done</button>
+  </div>
 </div>
 
 <script>
 let questions = [];
 let index = 0;
+const fields = ['question','option1','option2','option3','option4','answer'];
+const keys   = ['question','o1','o2','o3','o4','ans'];
 
-// SAVE CURRENT
-function saveCurrent() {
-    questions[index] = {
-        question: document.getElementById("question").value,
-        o1: document.getElementById("option1").value,
-        o2: document.getElementById("option2").value,
-        o3: document.getElementById("option3").value,
-        o4: document.getElementById("option4").value,
-        ans: document.getElementById("answer").value
-    };
+function save() {
+  questions[index] = {};
+  fields.forEach((f,i) => questions[index][keys[i]] = document.getElementById(f).value);
 }
 
-// LOAD QUESTION
-function loadQuestion(i) {
-    let q = questions[i] || {};
-
-    document.getElementById("question").value = q.question || "";
-    document.getElementById("option1").value = q.o1 || "";
-    document.getElementById("option2").value = q.o2 || "";
-    document.getElementById("option3").value = q.o3 || "";
-    document.getElementById("option4").value = q.o4 || "";
-    document.getElementById("answer").value = q.ans || "";
-
-    document.getElementById("count").innerText = i + 1;
+function load(i) {
+  const q = questions[i] || {};
+  fields.forEach((f,j) => document.getElementById(f).value = q[keys[j]] || '');
+  document.getElementById('q-idx').textContent = i + 1;
+  document.getElementById('q-total-count').textContent = Math.max(questions.length, i + 1);
 }
 
-// ADD QUESTION
 function addQuestion() {
-    saveCurrent();
-
-    if (questions.length >= 50) {
-        alert("Max 50 questions allowed ❌");
-        return;
-    }
-
-    index++;
-    loadQuestion(index);
+  save();
+  if (questions.length >= 50) { alert('Max 50 questions'); return; }
+  index = questions.length;
+  load(index);
 }
 
-// NEXT
 function next() {
-    saveCurrent();
-
-    if (index < questions.length - 1) {
-        index++;
-        loadQuestion(index);
-    }
+  save();
+  if (index < questions.length - 1) { index++; load(index); }
 }
 
-// PREVIOUS
 function prev() {
-    saveCurrent();
-
-    if (index > 0) {
-        index--;
-        loadQuestion(index);
-    }
+  save();
+  if (index > 0) { index--; load(index); }
 }
 
-// GENERATE QUIZ
-document.getElementById("quizForm").addEventListener("submit", function(e) {
-    e.preventDefault();
+document.getElementById('quizForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  save();
+  const valid = questions.filter(q => q.question && q.o1 && q.o2 && q.o3 && q.o4 && q.ans);
+  if (valid.length < 2) { alert('Add at least 2 complete questions'); return; }
 
-    saveCurrent();
-
-    if (questions.length < 2) {
-        alert("Minimum 2 questions required ❌");
-        return;
-    }
-
-    fetch('/admin_generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions: questions })
-    })
-    .then(res => res.text())
-    .then(data => {
-        alert(data);
-        location.reload();
-    });
+  const res = await fetch('/admin_generate', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({questions: valid})
+  });
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById('modal-code').textContent = data.code;
+    document.getElementById('modal').classList.add('open');
+    // reset
+    questions = [];
+    index = 0;
+    load(0);
+  } else {
+    alert(data.message);
+  }
 });
-</script>
 
+function copyCode() {
+  navigator.clipboard.writeText(document.getElementById('modal-code').textContent);
+  document.querySelector('#modal .btn-primary').textContent = '✓ Copied!';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.querySelector('#modal .btn-primary').textContent = '📋 Copy Code';
+}
+</script>
 </body>
 </html>
