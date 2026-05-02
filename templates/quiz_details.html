@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: rgba(255,255,255,0.2);
+        }
+
+        tr {
+            background: rgba(255,255,255,0.1);
+            margin-bottom: 5px;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .top1 { color: gold; font-weight: bold; }
+        .top2 { color: silver; font-weight: bold; }
+        .top3 { color: #cd7f32; font-weight: bold; }
+
+        .empty {
+            text-align: center;
+            margin-top: 20px;
+            opacity: 0.7;
+        }
+
+        .back-btn {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+<div class="card">
+
+<h2>📋 Quiz Code: <span style="color:#ffd700;">{{ code }}</span></h2>
+
+{% if data|length == 0 %}
+    <p class="empty">No one has attempted this quiz yet 😴</p>
+{% else %}
+
+<table>
+    <tr>
+        <th>Rank 🏆</th>
+        <th>User 👤</th>
+        <th>Score 📊</th>
+    </tr>
+
+    {% for row in data %}
+    <tr class="
+        {% if row[0] == 1 %}top1{% elif row[0] == 2 %}top2{% elif row[0] == 3 %}top3{% endif %}
+    ">
+        <td>{{ row[0] }}</td>
+        <td>{{ row[1] }}</td>
+        <td>{{ row[2] }}/{{ row[3] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endif %}
+
+<div class="back-btn">
+    <a href="/admin/quizzes">
+        <button>⬅ Back to Quizzes</button>
+    </a>
+</div>
+
+</div>
+</div>
+
+</body>
+</html>

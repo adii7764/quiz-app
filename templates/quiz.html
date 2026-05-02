@@ -15,15 +15,13 @@
 
         <form method="POST" action="/result" id="quizForm">
 
+            <!-- 🔥 IMPORTANT -->
+            <input type="hidden" name="code" value="{{ code }}">
+
             {% for q in questions %}
             <div class="question-box" style="{% if loop.index != 1 %}display:none{% endif %}">
                 
-                <p class="question"><b>{{ loop.index }}. {{ q[1] }}</b></p>
-
-                <label class="option">
-                    <input type="radio" name="q{{ q[0] }}" value="{{ q[2] }}">
-                    <span>{{ q[2] }}</span>
-                </label>
+                <p class="question"><b>{{ loop.index }}. {{ q[2] }}</b></p>
 
                 <label class="option">
                     <input type="radio" name="q{{ q[0] }}" value="{{ q[3] }}">
@@ -38,6 +36,11 @@
                 <label class="option">
                     <input type="radio" name="q{{ q[0] }}" value="{{ q[5] }}">
                     <span>{{ q[5] }}</span>
+                </label>
+
+                <label class="option">
+                    <input type="radio" name="q{{ q[0] }}" value="{{ q[6] }}">
+                    <span>{{ q[6] }}</span>
                 </label>
 
             </div>
@@ -80,7 +83,6 @@ function prevQuestion() {
 }
 
 showQuestion(current);
-
 
 // TIMER
 let time = 60;

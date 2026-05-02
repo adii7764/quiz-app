@@ -12,18 +12,32 @@
 
         <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
 
-            <a href="/quiz">
-                <button>Start Quiz 🧠</button>
+            <!-- JOIN QUIZ -->
+            <a href="/join">
+                <button>Join Quiz 🔑</button>
             </a>
 
+            <!-- LEADERBOARD -->
             <a href="/leaderboard">
                 <button>Leaderboard 🏆</button>
             </a>
 
+            <!-- HISTORY -->
             <a href="/history">
                 <button>My History 📜</button>
             </a>
 
+            <!-- ADMIN ONLY -->
+            {% if user == 'admin' %}
+            <a href="/admin">
+                <button>Generate Quiz 👑</button>
+            </a>
+            <a href="/admin/quizzes">
+                <button>View Quizzes 📊</button>
+            </a>
+            {% endif %}
+
+            <!-- LOGOUT -->
             <a href="/logout">
                 <button>Logout 🚪</button>
             </a>
