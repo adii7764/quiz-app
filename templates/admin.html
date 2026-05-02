@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Quiz — QuizIQ Admin</title>
+  <title>Create Quiz — QuizIQ</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -14,7 +14,7 @@
         <h2 class="page-title">Create Quiz 👑</h2>
         <p class="text-muted">Build a quiz for your players</p>
       </div>
-      <a href="/dashboard" class="btn btn-outline btn-sm">← Dashboard</a>
+      <a href="/dashboard" class="btn btn-outline btn-sm">← Back</a>
     </div>
 
     <div class="stat-row">
@@ -125,7 +125,7 @@ document.getElementById('quizForm').addEventListener('submit', async (e) => {
   const valid = questions.filter(q => q.question && q.o1 && q.o2 && q.o3 && q.o4 && q.ans);
   if (valid.length < 2) { alert('Add at least 2 complete questions'); return; }
 
-  const res = await fetch('/admin_generate', {
+  const res = await fetch('/create_generate', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({questions: valid})

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, jsonify
 from contextlib import contextmanager
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import random
 import string
@@ -49,7 +50,8 @@ def init_db():
                 code TEXT,
                 question TEXT,
                 option1 TEXT, option2 TEXT, option3 TEXT, option4 TEXT,
-                answer TEXT
+                answer TEXT,
+                created_by TEXT DEFAULT 'admin'
             );
         ''')
         c.execute("SELECT COUNT(*) FROM questions")
@@ -95,10 +97,9 @@ def home():
         password = request.form['password']
         with get_db() as conn:
             user = conn.execute(
-                "SELECT * FROM users WHERE username=? AND password=?",
-                (username, password)
+                "SELECT * FROM users WHERE username=?", (username,)
             ).fetchone()
-        if user:
+        if user and check_password_hash(user['password'], password):
             session['user'] = username
             return redirect('/dashboard')
         return render_template('login.html', error="Invalid username or password")
@@ -116,7 +117,8 @@ def signup():
             existing = conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
             if existing:
                 return render_template('signup.html', error="Username already taken")
-            conn.execute("INSERT INTO users (username, password) VALUES (?,?)", (username, password))
+            hashed = generate_password_hash(password)
+            conn.execute("INSERT INTO users (username, password) VALUES (?,?)", (username, hashed))
             conn.commit()
         return redirect('/')
     return render_template('signup.html')
@@ -155,10 +157,20 @@ def result():
     code = session.get('quiz_code')
     with get_db() as conn:
         questions = conn.execute("SELECT * FROM quiz_rooms WHERE code=?", (code,)).fetchall()
-        score = sum(
-            1 for q in questions
-            if request.form.get(f"q{q['id']}") == q['answer']
-        )
+        review = []
+        score = 0
+        for q in questions:
+            user_ans = request.form.get(f"q{q['id']}", None)
+            correct = user_ans == q['answer']
+            if correct:
+                score += 1
+            review.append({
+                'question': q['question'],
+                'options': [q['option1'], q['option2'], q['option3'], q['option4']],
+                'correct': q['answer'],
+                'user': user_ans,
+                'is_correct': correct
+            })
         total = len(questions)
         percentage = round((score / total) * 100) if total > 0 else 0
         conn.execute(
@@ -166,7 +178,7 @@ def result():
             (username, code, score, total)
         )
         conn.commit()
-    return render_template('result.html', score=score, total=total, percentage=percentage)
+    return render_template('result.html', score=score, total=total, percentage=percentage, review=review)
 
 
 @app.route('/leaderboard')
@@ -258,16 +270,22 @@ def history():
     return render_template('history.html', data=data, user=session['user'])
 
 
-@app.route('/admin')
-@admin_required
-def admin():
+@app.route('/create')
+@login_required
+def create():
+    user = session['user']
     with get_db() as conn:
-        codes = conn.execute("SELECT DISTINCT code FROM quiz_rooms").fetchall()
+        if user == 'admin':
+            codes = conn.execute("SELECT DISTINCT code FROM quiz_rooms").fetchall()
+        else:
+            codes = conn.execute(
+                "SELECT DISTINCT code FROM quiz_rooms WHERE created_by=?", (user,)
+            ).fetchall()
     return render_template('admin.html', codes=codes, total=len(codes))
 
 
-@app.route('/admin_generate', methods=['POST'])
-@admin_required
+@app.route('/create_generate', methods=['POST'])
+@login_required
 def admin_generate():
     data = request.get_json()
     questions = data.get('questions', [])
@@ -275,35 +293,52 @@ def admin_generate():
         return jsonify(success=False, message="Minimum 2 questions required"), 400
 
     code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    creator = session['user']
     with get_db() as conn:
         conn.executemany(
-            "INSERT INTO quiz_rooms (code,question,option1,option2,option3,option4,answer) VALUES (?,?,?,?,?,?,?)",
-            [(code, q['question'], q['o1'], q['o2'], q['o3'], q['o4'], q['ans']) for q in questions]
+            "INSERT INTO quiz_rooms (code,question,option1,option2,option3,option4,answer,created_by) VALUES (?,?,?,?,?,?,?,?)",
+            [(code, q['question'], q['o1'], q['o2'], q['o3'], q['o4'], q['ans'], creator) for q in questions]
         )
         conn.commit()
     return jsonify(success=True, code=code)
 
 
-@app.route('/admin/quizzes')
-@admin_required
+@app.route('/my-quizzes')
+@login_required
 def view_quizzes():
+    user = session['user']
     with get_db() as conn:
-        quizzes = conn.execute("SELECT DISTINCT code FROM quiz_rooms").fetchall()
+        if user == 'admin':
+            quizzes = conn.execute(
+                "SELECT DISTINCT code, created_by FROM quiz_rooms ORDER BY id DESC"
+            ).fetchall()
+        else:
+            quizzes = conn.execute(
+                "SELECT DISTINCT code, created_by FROM quiz_rooms WHERE created_by=? ORDER BY id DESC",
+                (user,)
+            ).fetchall()
     return render_template('admin_quizzes.html', quizzes=quizzes)
 
 
-@app.route('/admin/quiz/<code>')
-@admin_required
+@app.route('/quiz/<code>/results')
+@login_required
 def quiz_details(code):
+    user = session['user']
     with get_db() as conn:
+        # Only the creator or admin can view results
+        owner = conn.execute(
+            "SELECT created_by FROM quiz_rooms WHERE code=? LIMIT 1", (code,)
+        ).fetchone()
+        if not owner or (owner['created_by'] != user and user != 'admin'):
+            return render_template('error.html', message="You don't have access to this quiz"), 403
+
         rows = conn.execute(
             "SELECT username, score, total FROM scores WHERE code=? ORDER BY score DESC",
             (code,)
         ).fetchall()
 
     data = []
-    rank = None
-    prev_score = None
+    rank = prev_score = None
     for i, row in enumerate(rows, 1):
         if row['score'] != prev_score:
             rank = i
@@ -313,14 +348,20 @@ def quiz_details(code):
     return render_template('quiz_details.html', data=data, code=code)
 
 
-@app.route('/admin/delete_quiz/<code>', methods=['POST'])
-@admin_required
+@app.route('/quiz/<code>/delete', methods=['POST'])
+@login_required
 def delete_quiz(code):
+    user = session['user']
     with get_db() as conn:
+        owner = conn.execute(
+            "SELECT created_by FROM quiz_rooms WHERE code=? LIMIT 1", (code,)
+        ).fetchone()
+        if not owner or (owner['created_by'] != user and user != 'admin'):
+            return render_template('error.html', message="You can't delete this quiz"), 403
         conn.execute("DELETE FROM quiz_rooms WHERE code=?", (code,))
         conn.execute("DELETE FROM scores WHERE code=?", (code,))
         conn.commit()
-    return redirect('/admin/quizzes')
+    return redirect('/my-quizzes')
 
 
 @app.route('/logout')

@@ -5,46 +5,236 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Result — QuizIQ</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .review-section { margin-top: 28px; }
+
+    .review-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .review-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .filter-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .filter-btn {
+      padding: 5px 12px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn.active {
+      background: var(--surface2);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .q-card {
+      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      padding: 16px;
+      margin-bottom: 10px;
+      background: var(--surface2);
+      transition: border-color 0.2s;
+    }
+
+    .q-card.correct  { border-color: rgba(0,212,170,0.3); background: rgba(0,212,170,0.04); }
+    .q-card.wrong    { border-color: rgba(255,69,96,0.3);  background: rgba(255,69,96,0.04); }
+    .q-card.skipped  { border-color: rgba(255,165,0,0.25); background: rgba(255,165,0,0.04); }
+
+    .q-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .q-status-dot {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .dot-correct { background: rgba(0,212,170,0.15); color: var(--accent3); }
+    .dot-wrong   { background: rgba(255,69,96,0.15);  color: var(--danger); }
+    .dot-skipped { background: rgba(255,165,0,0.12);  color: orange; }
+
+    .q-text {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.45;
+      color: var(--text);
+    }
+
+    .q-options {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-left: 32px;
+    }
+
+    .q-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      border: 1px solid transparent;
+      background: var(--surface);
+    }
+
+    .q-option.opt-correct {
+      background: rgba(0,212,170,0.1);
+      border-color: rgba(0,212,170,0.3);
+      color: var(--accent3);
+    }
+
+    .q-option.opt-wrong {
+      background: rgba(255,69,96,0.08);
+      border-color: rgba(255,69,96,0.25);
+      color: var(--danger);
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+
+    .q-option .opt-icon {
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .skipped-note {
+      padding-left: 32px;
+      font-size: 12px;
+      color: orange;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+  </style>
 </head>
 <body>
-<div class="page">
-  <div class="card result-center">
-    <h2 class="page-title">Quiz Complete! 🎯</h2>
+<div class="page page-wide" style="padding-top:32px;padding-bottom:40px;">
+  <div class="card card-wide">
 
-    <!-- SVG Ring -->
-    <div class="score-ring">
-      <svg width="140" height="140" viewBox="0 0 140 140">
-        <defs>
-          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#7c6aff"/>
-            <stop offset="100%" style="stop-color:#ff6b9d"/>
-          </linearGradient>
-        </defs>
-        <circle class="ring-bg" cx="70" cy="70" r="54"/>
-        <circle class="ring-fill" id="ring" cx="70" cy="70" r="54"/>
-      </svg>
-      <div class="score-text">
-        <span class="score-pct" id="pct-text">0%</span>
-        <span class="score-label">score</span>
+    <!-- Score Ring -->
+    <div class="result-center">
+      <h2 class="page-title">Quiz Complete! 🎯</h2>
+
+      <div class="score-ring">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#7c6aff"/>
+              <stop offset="100%" style="stop-color:#ff6b9d"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-bg" cx="70" cy="70" r="54"/>
+          <circle class="ring-fill" id="ring" cx="70" cy="70" r="54"/>
+        </svg>
+        <div class="score-text">
+          <span class="score-pct" id="pct-text">0%</span>
+          <span class="score-label">score</span>
+        </div>
+      </div>
+
+      <p class="score-fraction">{{ score }} / {{ total }} correct</p>
+      <div id="feedback-badge" class="feedback-badge"></div>
+
+      <div class="btn-group mt-3">
+        <a href="/leaderboard" class="btn btn-outline">🏆 Leaderboard</a>
+        <a href="/dashboard"   class="btn btn-primary">Dashboard →</a>
       </div>
     </div>
 
-    <p class="score-fraction">{{ score }} / {{ total }} correct</p>
-    <div id="feedback-badge" class="feedback-badge"></div>
+    <!-- Answer Review -->
+    <div class="review-section">
+      <div class="review-header">
+        <span class="review-title">Answer Review</span>
+        <div class="filter-btns">
+          <button class="filter-btn active" onclick="filter('all', this)">All</button>
+          <button class="filter-btn" onclick="filter('correct', this)">✓ Correct</button>
+          <button class="filter-btn" onclick="filter('wrong', this)">✗ Wrong</button>
+          <button class="filter-btn" onclick="filter('skipped', this)">— Skipped</button>
+        </div>
+      </div>
 
-    <div class="btn-group mt-3">
-      <a href="/leaderboard" class="btn btn-outline">🏆 Leaderboard</a>
-      <a href="/dashboard" class="btn btn-primary">Dashboard →</a>
+      {% for item in review %}
+      {% if item.user is none %}
+        {% set status = 'skipped' %}
+      {% elif item.is_correct %}
+        {% set status = 'correct' %}
+      {% else %}
+        {% set status = 'wrong' %}
+      {% endif %}
+
+      <div class="q-card {{ status }}" data-status="{{ status }}">
+        <div class="q-card-header">
+          <div class="q-status-dot
+            {% if status == 'correct' %}dot-correct
+            {% elif status == 'wrong'   %}dot-wrong
+            {% else %}dot-skipped{% endif %}">
+            {% if status == 'correct' %}✓
+            {% elif status == 'wrong'  %}✗
+            {% else %}—{% endif %}
+          </div>
+          <p class="q-text">{{ loop.index }}. {{ item.question }}</p>
+        </div>
+
+        <div class="q-options">
+          {% for opt in item.options %}
+          <div class="q-option
+            {% if opt == item.correct %}opt-correct
+            {% elif opt == item.user and not item.is_correct %}opt-wrong
+            {% endif %}">
+            <span class="opt-icon">
+              {% if opt == item.correct %}✓
+              {% elif opt == item.user and not item.is_correct %}✗
+              {% else %}·{% endif %}
+            </span>
+            {{ opt }}
+            {% if opt == item.correct %}
+              <span style="margin-left:auto;font-size:11px;opacity:0.7">correct answer</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        {% if status == 'skipped' %}
+        <p class="skipped-note">⚠ You skipped this question</p>
+        {% endif %}
+      </div>
+      {% endfor %}
     </div>
+
   </div>
 </div>
 
 <script>
+// Ring animation
 const target = {{ percentage }};
 const ring = document.getElementById('ring');
-const circumference = 2 * Math.PI * 54; // 339.29
+const circumference = 2 * Math.PI * 54;
 let count = 0;
-
 const interval = setInterval(() => {
   count = Math.min(count + 1, target);
   document.getElementById('pct-text').textContent = count + '%';
@@ -64,6 +254,15 @@ const interval = setInterval(() => {
     }
   }
 }, 15);
+
+// Filter
+function filter(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.q-card').forEach(card => {
+    card.style.display = (type === 'all' || card.dataset.status === type) ? '' : 'none';
+  });
+}
 </script>
 </body>
 </html>

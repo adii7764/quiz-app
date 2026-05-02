@@ -31,6 +31,22 @@
         </div>
       </a>
 
+      <a href="/create" class="dash-item">
+        <div class="dash-item-icon icon-admin">✏️</div>
+        <div class="dash-item-text">
+          <strong>Create Quiz</strong>
+          <span>Build & share a quiz</span>
+        </div>
+      </a>
+
+      <a href="/my-quizzes" class="dash-item">
+        <div class="dash-item-icon icon-view">📊</div>
+        <div class="dash-item-text">
+          <strong>My Quizzes</strong>
+          <span>View your quizzes</span>
+        </div>
+      </a>
+
       <a href="/history" class="dash-item full-width">
         <div class="dash-item-icon icon-history">📜</div>
         <div class="dash-item-text">
@@ -38,26 +54,6 @@
           <span>View past attempts</span>
         </div>
       </a>
-
-      {% if user == 'admin' %}
-      <hr class="divider" style="grid-column:span 2; margin: 4px 0;">
-
-      <a href="/admin" class="dash-item">
-        <div class="dash-item-icon icon-admin">✏️</div>
-        <div class="dash-item-text">
-          <strong>Create Quiz</strong>
-          <span>Generate a quiz</span>
-        </div>
-      </a>
-
-      <a href="/admin/quizzes" class="dash-item">
-        <div class="dash-item-icon icon-view">📊</div>
-        <div class="dash-item-text">
-          <strong>View Quizzes</strong>
-          <span>Manage all quizzes</span>
-        </div>
-      </a>
-      {% endif %}
     </div>
 
     <hr class="divider">

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>All Quizzes — QuizIQ Admin</title>
+  <title>My Quizzes — QuizIQ</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -11,20 +11,26 @@
   <div class="card card-wide">
     <div class="page-bar">
       <div>
-        <h2 class="page-title">All Quizzes 📊</h2>
-        <p class="text-muted">{{ quizzes|length }} quiz{{ 'zes' if quizzes|length != 1 else '' }} total</p>
+        <h2 class="page-title">My Quizzes 📊</h2>
+        <p class="text-muted">{{ quizzes|length }} quiz{{ 'zes' if quizzes|length != 1 else '' }} created</p>
       </div>
-      <a href="/dashboard" class="btn btn-outline btn-sm">← Back</a>
+      <div style="display:flex;gap:8px;">
+        <a href="/create" class="btn btn-primary btn-sm">+ Create New</a>
+        <a href="/dashboard" class="btn btn-outline btn-sm">← Back</a>
+      </div>
     </div>
 
     {% if quizzes %}
     <div class="quiz-list">
       {% for q in quizzes %}
       <div class="quiz-row">
-        <span class="quiz-code-tag">{{ q[0] }}</span>
+        <div>
+          <span class="quiz-code-tag">{{ q['code'] }}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:10px;">by {{ q['created_by'] }}</span>
+        </div>
         <div class="quiz-row-actions">
-          <a href="/admin/quiz/{{ q[0] }}" class="btn btn-outline btn-sm">View Results</a>
-          <button class="btn btn-danger btn-sm" onclick="confirmDelete('{{ q[0] }}')">Delete</button>
+          <a href="/quiz/{{ q['code'] }}/results" class="btn btn-outline btn-sm">View Results</a>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete('{{ q['code'] }}')">Delete</button>
         </div>
       </div>
       {% endfor %}
@@ -32,7 +38,7 @@
     {% else %}
     <div class="empty-state">
       <div class="empty-icon">📭</div>
-      <p>No quizzes yet. <a href="/admin" style="color:var(--accent)">Create one</a></p>
+      <p>No quizzes yet. <a href="/create" style="color:var(--accent)">Create your first one</a></p>
     </div>
     {% endif %}
   </div>
@@ -53,7 +59,7 @@
 
 <script>
 function confirmDelete(code) {
-  document.getElementById('delForm').action = '/admin/delete_quiz/' + code;
+  document.getElementById('delForm').action = '/quiz/' + code + '/delete';
   document.getElementById('delModal').classList.add('open');
 }
 </script>
