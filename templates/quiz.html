@@ -15,7 +15,7 @@
 
         <form method="POST" action="/result" id="quizForm">
 
-            <!-- 🔥 IMPORTANT -->
+            <!-- QUIZ CODE -->
             <input type="hidden" name="code" value="{{ code }}">
 
             {% for q in questions %}
@@ -62,19 +62,30 @@
 let current = 0;
 let questions = document.querySelectorAll(".question-box");
 
+let timePerQuestion = 60;
+let timer = document.getElementById("timer");
+let countdown;
+
+// SHOW QUESTION
 function showQuestion(index) {
     questions.forEach((q, i) => {
         q.style.display = i === index ? "block" : "none";
     });
+
+    startTimer();
 }
 
+// NEXT QUESTION
 function nextQuestion() {
     if (current < questions.length - 1) {
         current++;
         showQuestion(current);
+    } else {
+        submitQuiz();
     }
 }
 
+// PREVIOUS QUESTION
 function prevQuestion() {
     if (current > 0) {
         current--;
@@ -82,21 +93,31 @@ function prevQuestion() {
     }
 }
 
+// TIMER LOGIC
+function startTimer() {
+    let time = timePerQuestion;
+
+    clearInterval(countdown);
+
+    countdown = setInterval(() => {
+        timer.innerText = "Time Left: " + time + "s";
+        time--;
+
+        if (time < 0) {
+            clearInterval(countdown);
+            nextQuestion(); // auto next
+        }
+    }, 1000);
+}
+
+// SUBMIT
+function submitQuiz() {
+    clearInterval(countdown);
+    document.getElementById("quizForm").submit();
+}
+
+// INIT
 showQuestion(current);
-
-// TIMER
-let time = 60;
-let timer = document.getElementById("timer");
-
-let countdown = setInterval(() => {
-    time--;
-    timer.innerText = "Time Left: " + time + "s";
-
-    if (time <= 0) {
-        clearInterval(countdown);
-        document.getElementById("quizForm").submit();
-    }
-}, 1000);
 </script>
 
 </body>
