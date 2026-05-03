@@ -301,14 +301,14 @@ def leaderboard():
         # Score distribution buckets: 0-20, 20-40, 40-60, 60-80, 80-100
         dist = fetchone(conn.execute("""
             SELECT
-                SUM(CASE WHEN pct < 20  THEN 1 ELSE 0 END),
-                SUM(CASE WHEN pct >= 20 AND pct < 40 THEN 1 ELSE 0 END),
-                SUM(CASE WHEN pct >= 40 AND pct < 60 THEN 1 ELSE 0 END),
-                SUM(CASE WHEN pct >= 60 AND pct < 80 THEN 1 ELSE 0 END),
-                SUM(CASE WHEN pct >= 80 THEN 1 ELSE 0 END)
+                SUM(CASE WHEN pct < 20  THEN 1 ELSE 0 END) as b1,
+                SUM(CASE WHEN pct >= 20 AND pct < 40 THEN 1 ELSE 0 END) as b2,
+                SUM(CASE WHEN pct >= 40 AND pct < 60 THEN 1 ELSE 0 END) as b3,
+                SUM(CASE WHEN pct >= 60 AND pct < 80 THEN 1 ELSE 0 END) as b4,
+                SUM(CASE WHEN pct >= 80 THEN 1 ELSE 0 END) as b5
             FROM (
                 SELECT CAST(score AS REAL) / NULLIF(total,0) * 100 as pct FROM scores
-            )
+            ) sub
         """))
 
     data = []
@@ -333,10 +333,10 @@ def leaderboard():
         'bar_labels': [d['username'] for d in data[:10]],
         'bar_scores': [d['best_pct'] for d in data[:10]],
         'bar_avg': [d['avg_pct'] for d in data[:10]],
-        'dist': list(dist) if dist else [0,0,0,0,0],
-        'quiz_labels': [q['code'] for q in quiz_stats],
-        'quiz_players': [q['players'] for q in quiz_stats],
-        'quiz_avg': [q['avg_pct'] for q in quiz_stats],
+        'dist': list(dist.values()) if dist else [0,0,0,0,0],
+        'quiz_labels': [qs['code'] for qs in quiz_stats],
+        'quiz_players': [qs['players'] for qs in quiz_stats],
+        'quiz_avg': [qs['avg_pct'] for qs in quiz_stats],
     }
 
     return render_template('leaderboard.html', data=data, chart_data=chart_data)
