@@ -152,7 +152,7 @@ def init_db():
                 );
             ''')
         cur = conn.execute("SELECT COUNT(*) FROM questions")
-        row = fetchone(cur)
+        row = cur.fetchone()
         count = row[0] if row else 0
         if count == 0:
             conn.executemany(
