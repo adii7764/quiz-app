@@ -279,7 +279,7 @@ def leaderboard():
     current_user = session['user']
     with get_db() as conn:
         rows = fetchall(conn.execute("""
-            SELECT username, MAX(score) as best_score, total,
+            SELECT username, MAX(score) as best_score, MAX(total) as total,
                    COUNT(*) as attempts,
                    ROUND(AVG(CAST(score AS REAL) / NULLIF(total,0) * 100), 1) as avg_pct,
                    MAX(CAST(score AS REAL) / NULLIF(total,0) * 100) as best_pct
@@ -365,9 +365,9 @@ def create():
     user = session['user']
     with get_db() as conn:
         if user == 'admin':
-            codes = fetchall(conn.execute("SELECT DISTINCT code FROM quiz_rooms"))
+            codes = fetchall(conn.execute("SELECT code FROM quiz_rooms GROUP BY code"))
         else:
-            codes = fetchall(conn.execute(q("SELECT DISTINCT code FROM quiz_rooms WHERE created_by=?"), (user,)))
+            codes = fetchall(conn.execute(q("SELECT code FROM quiz_rooms WHERE created_by=? GROUP BY code"), (user,)))
     return render_template('admin.html', codes=codes, total=len(codes))
 
 
@@ -397,9 +397,9 @@ def view_quizzes():
     user = session['user']
     with get_db() as conn:
         if user == 'admin':
-            quizzes = fetchall(conn.execute("SELECT DISTINCT code, created_by FROM quiz_rooms ORDER BY id DESC"))
+            quizzes = fetchall(conn.execute("SELECT code, created_by, MIN(id) as first_id FROM quiz_rooms GROUP BY code, created_by ORDER BY first_id DESC"))
         else:
-            quizzes = fetchall(conn.execute(q("SELECT DISTINCT code, created_by FROM quiz_rooms WHERE created_by=? ORDER BY id DESC"), (user,)))
+            quizzes = fetchall(conn.execute(q("SELECT code, created_by, MIN(id) as first_id FROM quiz_rooms WHERE created_by=? GROUP BY code, created_by ORDER BY first_id DESC"), (user,)))
     return render_template('admin_quizzes.html', quizzes=quizzes)
 
 
