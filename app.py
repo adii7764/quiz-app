@@ -21,15 +21,39 @@ USE_PG = DB.startswith('postgres')
 if USE_PG:
     import psycopg2
 
+class PGConnWrapper:
+    """Wraps a psycopg2 connection to support conn.execute() like sqlite3."""
+    def __init__(self, conn):
+        self._conn = conn
+        self._cur = conn.cursor()
+
+    def execute(self, sql, params=None):
+        if params:
+            self._cur.execute(sql, params)
+        else:
+            self._cur.execute(sql)
+        return self._cur
+
+    def executemany(self, sql, params_list):
+        self._cur.executemany(sql, params_list)
+        return self._cur
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._cur.close()
+        self._conn.close()
+
 @contextmanager
 def get_db():
     if USE_PG:
         conn = psycopg2.connect(DB)
-        conn.autocommit = False
+        wrapper = PGConnWrapper(conn)
         try:
-            yield conn
+            yield wrapper
         finally:
-            conn.close()
+            wrapper.close()
     else:
         conn = sqlite3.connect(DB)
         conn.row_factory = sqlite3.Row
@@ -63,16 +87,15 @@ def fetchone(cursor):
 
 def init_db():
     with get_db() as conn:
-        c = conn.cursor()
         if USE_PG:
-            c.execute('''
+            conn.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
                     username TEXT UNIQUE,
                     password TEXT
                 )
             ''')
-            c.execute('''
+            conn.execute('''
                 CREATE TABLE IF NOT EXISTS scores (
                     id SERIAL PRIMARY KEY,
                     username TEXT,
@@ -81,7 +104,7 @@ def init_db():
                     total INTEGER
                 )
             ''')
-            c.execute('''
+            conn.execute('''
                 CREATE TABLE IF NOT EXISTS questions (
                     id SERIAL PRIMARY KEY,
                     question TEXT,
@@ -89,7 +112,7 @@ def init_db():
                     answer TEXT
                 )
             ''')
-            c.execute('''
+            conn.execute('''
                 CREATE TABLE IF NOT EXISTS quiz_rooms (
                     id SERIAL PRIMARY KEY,
                     code TEXT,
@@ -100,7 +123,7 @@ def init_db():
                 )
             ''')
         else:
-            c.executescript('''
+            conn.executescript('''
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE,
@@ -128,11 +151,11 @@ def init_db():
                     created_by TEXT DEFAULT 'admin'
                 );
             ''')
-        c.execute("SELECT COUNT(*) FROM questions")
-        row = c.fetchone()
-        count = row[0] if USE_PG else row[0]
+        cur = conn.execute("SELECT COUNT(*) FROM questions")
+        row = fetchone(cur)
+        count = row[0] if row else 0
         if count == 0:
-            c.executemany(
+            conn.executemany(
                 q("INSERT INTO questions (question,option1,option2,option3,option4,answer) VALUES (?,?,?,?,?,?)"),
                 [
                     ("Capital of India?", "Delhi", "Mumbai", "Chennai", "Kolkata", "Delhi"),
