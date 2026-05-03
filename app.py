@@ -281,8 +281,8 @@ def leaderboard():
         rows = fetchall(conn.execute("""
             SELECT username, MAX(score) as best_score, MAX(total) as total,
                    COUNT(*) as attempts,
-                   ROUND(AVG(CAST(score AS REAL) / NULLIF(total,0) * 100), 1) as avg_pct,
-                   MAX(CAST(score AS REAL) / NULLIF(total,0) * 100) as best_pct
+                   ROUND(CAST(AVG(CAST(score AS FLOAT) / NULLIF(total,0) * 100) AS NUMERIC), 1) as avg_pct,
+                   MAX(CAST(score AS FLOAT) / NULLIF(total,0) * 100) as best_pct
             FROM scores
             GROUP BY username
             ORDER BY best_score DESC
@@ -291,7 +291,7 @@ def leaderboard():
         # Per-quiz participation stats
         quiz_stats = fetchall(conn.execute("""
             SELECT code, COUNT(DISTINCT username) as players,
-                   ROUND(AVG(CAST(score AS REAL) / NULLIF(total,0) * 100), 1) as avg_pct
+                   ROUND(CAST(AVG(CAST(score AS FLOAT) / NULLIF(total,0) * 100) AS NUMERIC), 1) as avg_pct
             FROM scores
             GROUP BY code
             ORDER BY players DESC
@@ -307,7 +307,7 @@ def leaderboard():
                 SUM(CASE WHEN pct >= 60 AND pct < 80 THEN 1 ELSE 0 END) as b4,
                 SUM(CASE WHEN pct >= 80 THEN 1 ELSE 0 END) as b5
             FROM (
-                SELECT CAST(score AS REAL) / NULLIF(total,0) * 100 as pct FROM scores
+                SELECT CAST(score AS FLOAT) / NULLIF(total,0) * 100 as pct FROM scores
             ) sub
         """))
 
@@ -323,8 +323,8 @@ def leaderboard():
             'score': row['best_score'],
             'total': row['total'],
             'attempts': row['attempts'],
-            'avg_pct': row['avg_pct'] or 0,
-            'best_pct': round(row['best_pct'] or 0, 1),
+            'avg_pct': float(row['avg_pct'] or 0),
+            'best_pct': round(float(row['best_pct'] or 0), 1),
             'is_me': row['username'] == current_user
         })
         prev_score = row['best_score']
@@ -333,10 +333,10 @@ def leaderboard():
         'bar_labels': [d['username'] for d in data[:10]],
         'bar_scores': [d['best_pct'] for d in data[:10]],
         'bar_avg': [d['avg_pct'] for d in data[:10]],
-        'dist': list(dist.values()) if dist else [0,0,0,0,0],
+        'dist': [int(v or 0) for v in dist.values()] if dist else [0,0,0,0,0],
         'quiz_labels': [qs['code'] for qs in quiz_stats],
         'quiz_players': [qs['players'] for qs in quiz_stats],
-        'quiz_avg': [qs['avg_pct'] for qs in quiz_stats],
+        'quiz_avg': [float(qs['avg_pct'] or 0) for qs in quiz_stats],
     }
 
     return render_template('leaderboard.html', data=data, chart_data=chart_data)
