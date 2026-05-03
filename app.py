@@ -19,13 +19,12 @@ DB = os.environ.get('DATABASE_URL', 'database.db')
 USE_PG = DB.startswith('postgres')
 
 if USE_PG:
-    import psycopg2
-    import psycopg2.extras
+    import psycopg
 
 @contextmanager
 def get_db():
     if USE_PG:
-        conn = psycopg2.connect(DB)
+        conn = psycopg.connect(DB)
         conn.autocommit = False
         try:
             yield conn
